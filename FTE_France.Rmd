@@ -1,0 +1,48 @@
+---
+title: "FTE_France"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(data.table)
+library(tidyverse)
+library(readxl)
+```
+
+
+```{r-Indie}
+list.files(pattern="Michelin")
+mich_files <- list.files(pattern="Michelin")
+mich_files
+length(mich_files)
+
+test <- read_excel("Michelin April Month Dump.xls",sheet = 1)
+
+str(mich_data)
+mich_data <- lapply(mich_files,
+                    read_excel,
+                    sheet=1)
+
+str(mich_data)
+
+# pierwsza proba
+
+for (i in 1:4){
+  i <- lapply(mich_files,
+                    read_excel,
+                    sheet=i)
+  print(i)
+}
+
+
+
+
+
+
+
+```
+
