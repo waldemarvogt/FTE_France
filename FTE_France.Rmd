@@ -39,6 +39,14 @@ for (i in 1:4){
 }
 
 
+# druga proba
+
+for (i in 1:4){
+  df <- lapply(mich_files,
+                    read_excel,
+                    sheet=i)
+  assign(paste0("mich",i),df)
+}
 
 
 
