@@ -15,31 +15,13 @@ library(readxl)
 
 
 ```{r-Indie}
+
+# Michelin
 list.files(pattern="Michelin")
 mich_files <- list.files(pattern="Michelin")
 mich_files
 length(mich_files)
 
-test <- read_excel("Michelin April Month Dump.xls",sheet = 1)
-
-str(mich_data)
-mich_data <- lapply(mich_files,
-                    read_excel,
-                    sheet=1)
-
-str(mich_data)
-
-# pierwsza proba
-
-for (i in 1:4){
-  i <- lapply(mich_files,
-                    read_excel,
-                    sheet=i)
-  print(i)
-}
-
-
-# druga proba
 
 for (i in 1:4){
   df <- lapply(mich_files,
@@ -48,8 +30,23 @@ for (i in 1:4){
   assign(paste0("mich",i),df)
 }
 
+mich1 <- do.call(rbind,mich1)
+mich2 <- do.call(rbind,mich2)
+mich3 <- do.call(rbind,mich3)
+mich4 <- do.call(rbind,mich4)
+michelin_list <- list(mich1,mich2,mich3,mich4)
 
+michelin <- do.call(rbind,michelin_list) %>% as_tibble()
+michelin$team <- "CC Team IN"
 
+# Schneider
+schn_files <- list.files(pattern = "Schneider")
+
+schn <- lapply(schn_files,
+               read_excel,
+               sheet=1) 
+
+schneider <- do.call(rbind,schn) %>% as_tibble()
 
 
 ```
