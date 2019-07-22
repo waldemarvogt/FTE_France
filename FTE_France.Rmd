@@ -11,6 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(data.table)
 library(tidyverse)
 library(readxl)
+library(janitor)
+library(kableExtra)
 ```
 
 
@@ -47,7 +49,38 @@ schn <- lapply(schn_files,
                sheet=1) 
 
 schneider <- do.call(rbind,schn) %>% as_tibble()
+schneider$team <- "CC Team IN"
 
+# CMA
+cma_files <- list.files(pattern="CMA")
 
+cma <- lapply(cma_files,
+              read_excel,
+              sheet=2)
+
+cma <- do.call(rbind,cma) %>% as_tibble()
+cma$team <- "CC Team IN"
+
+# Saint
+saint_files <- list.files(pattern="Saint")
+
+saint <- lapply(saint_files,
+               read_excel,
+               sheet=2)
+
+saint <- do.call(rbind,saint) %>% as_tibble()
+saint$team <- "CC Team IN"
+
+# Loreal
+loreal_files <- list.files(pattern = "Loreal")
+
+loreal <- lapply(loreal_files,
+                 read_excel,
+                 sheet=2)
+
+loreal <- do.call(rbind,loreal) %>% as_tibble()
+loreal$team <- "CC Team IN"
+
+india <- do.call(rbind,list(michelin,schneider,cma,saint,loreal))
 ```
 
