@@ -13,10 +13,11 @@ library(tidyverse)
 library(readxl)
 library(janitor)
 library(kableExtra)
+library(stringr)
 ```
 
 
-```{r-CC Team IN}
+```{r- CC Team IN}
 
 # MICHELIN
 list.files(pattern="Michelin")
@@ -81,21 +82,72 @@ loreal <- do.call(rbind,loreal) %>% as_tibble()
 loreal$team <- "CC Team IN"
 
 india <- do.call(rbind,list(michelin,schneider,cma,saint,loreal))
-india_sel <- india %>% select(CUSTOMER,CUSTOMERCODE,LASTOCCURRENCE,FIRSTOCCURRENCE,ORIGINALSEVERITY,ZDCONSOLETYPE,team) %>% clean_names()
+india_sel <- india %>% select(CUSTOMER,CUSTOMERCODE,LASTOCCURRENCE,FIRSTOCCURRENCE,ORIGINALSEVERITY,SUMMARY,ZDCONSOLETYPE,team) %>% clean_names() %>% 
+  mutate(lastoccurrence=as.POSIXct(lastoccurrence),
+         firstoccurrence=as.POSIXct(firstoccurrence))
+
+india_sel <- india_sel %>% mutate(originalseverity=as.character(originalseverity))
+india_sel$originalseverity[india_sel$originalseverity==2] <- "Warning"
+india_sel$originalseverity[india_sel$originalseverity==3] <- "Minor"
+india_sel$originalseverity[india_sel$originalseverity==4] <- "Critical"
+india_sel$originalseverity[india_sel$originalseverity==5] <- "Fatal"
+
+
 #india <- india %>% clean_names()
 ```
 
-```{r-CC Team CZ}
+```{r- CC Team CZ}
 brn04_part1 <- read_excel("BRN04 - BlueCare alert history.xls",sheet=1)
 brn04_part2 <- read_excel("BRN04 - BlueCare alert history 27.5. - 30.6.2019.xls",sheet=1)
 brn04_all <- full_join(brn04_part1,brn04_part2) %>% mutate(team="CC Team CZ") %>% clean_names()
-brn04_all_sel <- brn04_all %>% select(customer,cc,last_occurrence,first_occurrence,original_console_severity,z_dconsole_type,team)
+brn04_all_sel <- brn04_all %>% select(customer,cc,last_occurrence,first_occurrence,original_console_severity,summary,z_dconsole_type,team)
 #brn04_all <- brn04_all %>% clean_names()
 
 ```
 
-```{r}
-setdiff(india_sel,brn04_all_sel)
+```{r- CC Team PL1 & CC Team PL2}
 
+cc_team_pl1 <- read_excel("cc_team_pl1.xls",sheet=1) %>%  mutate(team="CC Team PL1") %>% clean_names()
+cc_team_pl1_sel <- cc_team_pl1 %>% select(customer,customer_code,last_occurrence_date,first_occurrence_date,original_severity,fproblem,zdconsoletype,team)
+
+cc_team_pl2 <- read_excel("cc_team_pl2.xls",sheet=1) %>% mutate(team="CC Team PL2") %>% clean_names()
+cc_team_pl2_sel <- cc_team_pl2 %>% select(customer,customer_code,last_occurrence_date,first_occurrence_date,original_severity,summary,zdconsoletype,team)
+
+cc_team_pl <- full_join(cc_team_pl1_sel,cc_team_pl2_sel,by=c("customer","customer_code","last_occurrence_date","first_occurrence_date","original_severity",
+                                                             "fproblem"="summary","zdconsoletype","team"))
+
+```
+
+
+```{r- merging}
+
+brn04_pl_fj <- full_join(cc_team_pl,brn04_all_sel,by=c("customer"="customer","customer_code"="cc","original_severity"="original_console_severity",
+                                                       "fproblem"="summary","last_occurrence_date"="last_occurrence","first_occurrence_date"="first_occurrence",
+                                                       "zdconsoletype"="z_dconsole_type","team"="team"))
+
+brn04_pl_in_fj <- full_join(brn04_pl_fj,india_sel,by=c("customer"="customer","customer_code"="customercode","last_occurrence_date"="lastoccurrence",
+                                                       "first_occurrence_date"="firstoccurrence","original_severity"="originalseverity","fproblem"="summary",
+                                                       "zdconsoletype"="zdconsoletype","team"="team"))
+
+```
+
+```{r-calculate}
+
+brn04_pl_in_fj$FTE_category <- ifelse(brn04_pl_in_fj$original_severity=="Fatal","Fatal","Ordinary")
+
+brn04_pl_in_fj_avg <- brn04_pl_in_fj %>% 
+  mutate(first_occurrence_date=as.Date(first_occurrence_date)) %>% 
+  group_by(team,customer,customer_code,first_occurrence_date,FTE_category) %>% 
+  summarise(n=n()) %>% 
+  ungroup() %>% 
+  group_by(team,customer,customer_code,FTE_category) %>% 
+  summarise(avg_per_day=round(mean(n),0),
+            avg_per_week=round(avg_per_day*7,0)) %>% 
+  ungroup()
+
+teams <- sort(rep(unique(brn04_pl_in_fj_avg$team),times=length(unique(brn04_pl_in_fj_avg$FTE_category))))
+cats <- rep(unique(brn04_pl_in_fj_avg$FTE_category),times=length(unique(brn04_pl_in_fj_avg$team)))
+
+FTE_cal <- data.frame("team"=teams,"cats"=cats,value=c(10,5,10,5,7,3,7,3))
 ```
 
